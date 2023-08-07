@@ -1,4 +1,5 @@
-import { useAccount, useEnsName } from 'wagmi'
+import { useEffect } from 'react'
+import { useAccount, useEnsName, } from 'wagmi'
 
 export function Account() {
   const { address } = useAccount()

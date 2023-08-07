@@ -8,15 +8,20 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@codemirror/lang-javascript": "^6.1.9",
+    "@uiw/codemirror-theme-okaidia": "^4.21.9",
+    "@uiw/react-codemirror": "^4.21.9",
     "@web3modal/ethereum": "2.4.1",
     "@web3modal/react": "2.4.1",
     "buffer": "^6.0.3",
+    "ethers": "^6.7.0",
     "process": "^0.11.10",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "util": "^0.12.4",
     "viem": "~0.3.24",
-    "wagmi": "^1.0.5"
+    "wagmi": "^1.0.5",
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "@types/react": "^18.0.9",
