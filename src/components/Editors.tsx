@@ -2,27 +2,31 @@ import { useCallback, useEffect, useState } from "react";
 import EditorFiles from "./EditorFIles";
 import EditorManual from "./EditorManual";
 import { ethers } from "ethers";
-import { useDebounce } from "../hooks/useDebounce";
-
-const Editor = (props: any) => {
+import { useContractWrite, useWaitForTransaction, useNetwork } from 'wagmi'
+//TODO Configutre your own contract for each network
+import { wagmiContractConfig } from "./contracts";
+import { BaseError } from "viem";
+import { stringify } from "../utils/stringify";
+const Editor = () => {
+    const { chain } = useNetwork()
     const [editorMiror, setEditorMiror] = useState<string>("");
     const [arrayOfAddressesFromEditor, setArrayOfAddressesFromEditor] = useState<any>();
     const [validArray, setValidArray] = useState<any>([]);
     const [isValid, setIsValid] = useState<boolean>(true);
-    const regx = /^\d+(\.\d+)?$/;
+    const regxAmount = /^(?!0\d+)\d+(\.\d+)?$/;
     const validate = useCallback(() => {
-        console.log("arrayOfAddressesFromEditor", arrayOfAddressesFromEditor);
         if (arrayOfAddressesFromEditor !== undefined) {
             const arrayOfElements = arrayOfAddressesFromEditor?.split("\n")[0] === "" ? [] : arrayOfAddressesFromEditor?.split("\n");
             let newArray: any = [];
             arrayOfElements.forEach(async (element: any, index: number) => {
                 let newElement: any;
                 if (element.split(",")[0] !== undefined || element.split(",")[1] !== undefined) {
+                    console.log(regxAmount.test(element.split(",")[1].trim()))
                     newElement = {
                         address: element.split(",")[0],
                         amount: element.split(",")[1],
                         errorAddress: !ethers.isAddress(element.split(",")[0]) ? "is not valid" : "",
-                        errorAmount: element.split(",")[1] === undefined || !regx.test(element.split(",")[1].trim()) ? "is not valid" : "",
+                        errorAmount: element.split(",")[1] === undefined || !regxAmount.test(element.split(",")[1].trim()) ? "is not valid" : "",
                         row: index + 1
                     }
                 }
@@ -44,10 +48,8 @@ const Editor = (props: any) => {
         // // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [arrayOfAddressesFromEditor]);
     const deleteInvalid = () => {
-        console.log("deleteInvalid");
         let newElems = "";
         const valArr: any = [];
-        console.log("validArray", validArray);
         validArray.forEach((element: any, index: number) => {
             if (element.errorAddress === "" && element.errorAmount === "") {
                 if (index === validArray.length - 1) {
@@ -56,16 +58,29 @@ const Editor = (props: any) => {
                 else {
                     newElems += element.address + "," + element.amount + "\n";
                 }
-                console.log("element", element);
                 valArr.push(element);
             }
         });
-        console.log("valArr", valArr);
         setValidArray(valArr);
         setEditorMiror(newElems);
         setArrayOfAddressesFromEditor(newElems);
         //  eslint-disable-next-line react-hooks/exhaustive-deps
     }
+    const [currentContract, setCurrentContract] = useState<any>()
+    useEffect(() => {
+        //TODO change to your own contract with network name or chainId
+        setCurrentContract(chain?.name === "" ? wagmiContractConfig : chain?.name === "" ? wagmiContractConfig : wagmiContractConfig)
+    }, [chain])
+    const { write, data, error, isLoading, isError } = useContractWrite({
+        ...currentContract,
+        //TODO change to Send
+        functionName: 'mint',
+    })
+    const {
+        data: receipt,
+        isLoading: isPending,
+        isSuccess,
+    } = useWaitForTransaction({ hash: data?.hash })
     useEffect(() => {
         validate();
         // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -90,6 +105,27 @@ const Editor = (props: any) => {
                     })
                 }
             </div>
+            <button onClick={() => {
+                write({
+                    args: [
+                        validArray.map((element: any) => element.address),
+                        //TODO change to if ETH parseEthers else parseUnits and add token decimals
+                        validArray.map((element: any) => ethers.parseUnits(element.amount))
+                    ],
+                })
+            }}>Send Tx</button>
+
+            {isLoading && <div>Check wallet...</div>}
+            {isPending && <div>Transaction pending...</div>}
+            {isSuccess && (
+                <>
+                    <div>Transaction Hash: {data?.hash}</div>
+                    <div>
+                        Transaction Receipt: <pre>{stringify(receipt, null, 2)}</pre>
+                    </div>
+                </>
+            )}
+            {isError && <div>{(error as BaseError)?.shortMessage}</div>}
         </div>
     )
 }
