@@ -16,9 +16,7 @@ const EditorManual = (props:any) => {
                 onChange={onChange}
                 style={{ fontSize: 12 }}
             />
-          
         </div>
     )
-
 }
 export default EditorManual

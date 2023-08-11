@@ -4,10 +4,11 @@ import EditorManual from "./EditorManual";
 import { ethers } from "ethers";
 import { useContractWrite, useWaitForTransaction, useNetwork } from 'wagmi'
 //TODO Configutre your own contract for each network
-import { wagmiContractConfig } from "./contracts";
+import { zkSynkContractConfig, lineaContractConfig, ethereumContractConfig } from "./contracts";
 import { BaseError } from "viem";
 import { stringify } from "../utils/stringify";
 const Editor = () => {
+    const [totalAmount, setTotalAmount] = useState<number>(0);
     const { chain } = useNetwork()
     const [editorMiror, setEditorMiror] = useState<string>("");
     const [arrayOfAddressesFromEditor, setArrayOfAddressesFromEditor] = useState<any>();
@@ -21,7 +22,6 @@ const Editor = () => {
             arrayOfElements.forEach(async (element: any, index: number) => {
                 let newElement: any;
                 if (element.split(",")[0] !== undefined || element.split(",")[1] !== undefined) {
-                    console.log(regxAmount.test(element.split(",")[1].trim()))
                     newElement = {
                         address: element.split(",")[0],
                         amount: element.split(",")[1],
@@ -40,8 +40,15 @@ const Editor = () => {
                     }
                     setIsValid(false)
                 }
-                newArray.push(newElement);
+                if(newElement.errorAddress === "" || newElement.errorAmount === ""){
+                    newArray.push(newElement);
+                }
+                
             });
+            if(newArray.length > 0) {
+                const calculateTotal = newArray.reduce((acum: number, element: any) => acum + +element.amount, 0);
+                setTotalAmount(calculateTotal);
+            }
             setValidArray(newArray);
             setEditorMiror(arrayOfAddressesFromEditor);
         }
@@ -69,12 +76,12 @@ const Editor = () => {
     const [currentContract, setCurrentContract] = useState<any>()
     useEffect(() => {
         //TODO change to your own contract with network name or chainId
-        setCurrentContract(chain?.name === "" ? wagmiContractConfig : chain?.name === "" ? wagmiContractConfig : wagmiContractConfig)
+        setCurrentContract(chain?.name === "ethereum" ? ethereumContractConfig : chain?.name === "zkSynk" ? zkSynkContractConfig : lineaContractConfig)
     }, [chain])
     const { write, data, error, isLoading, isError } = useContractWrite({
         ...currentContract,
         //TODO change to Send
-        functionName: 'mint',
+        functionName: 'Send',
     })
     const {
         data: receipt,
@@ -89,7 +96,7 @@ const Editor = () => {
         <div>
             <EditorManual editorMiror={editorMiror} setArrayOfAddressesFromEditor={setArrayOfAddressesFromEditor} />
             <EditorFiles setArrayOfAddressesFromEditor={setArrayOfAddressesFromEditor} />
-            <button className="" onClick={deleteInvalid}>Delete them</button>
+            <button onClick={deleteInvalid}>Delete Invalid</button>
             <div className={!isValid ? "flex flex-col rounded-sm bg-white border-2 border-red-400 p-3 sm:p-1 mb-1" : "hidden"}>
                 {
                     !isValid && arrayOfAddressesFromEditor.length > 0 && arrayOfAddressesFromEditor.map((element: any, index: number) => {
@@ -112,6 +119,7 @@ const Editor = () => {
                         //TODO change to if ETH parseEthers else parseUnits and add token decimals
                         validArray.map((element: any) => ethers.parseUnits(element.amount))
                     ],
+                    value: ethers.parseEther(totalAmount.toString()),
                 })
             }}>Send Tx</button>
 
