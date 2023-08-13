@@ -46,7 +46,8 @@ const Editor = () => {
                 
             });
             if(newArray.length > 0) {
-                const calculateTotal = newArray.reduce((acum: number, element: any) => acum + +element.amount, 0);
+                const calculateTotal = newArray.reduce((acum: number, element: any) => acum + parseFloat(element.amount), 0);
+                console.log(calculateTotal);
                 setTotalAmount(calculateTotal);
             }
             setValidArray(newArray);
