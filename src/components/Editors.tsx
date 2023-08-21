@@ -2,17 +2,9 @@ import { useCallback, useEffect, useState } from "react";
 import EditorFiles from "./EditorFIles";
 import EditorManual from "./EditorManual";
 import { ethers } from "ethers";
-import { useContractWrite, useWaitForTransaction, useNetwork } from 'wagmi'
-//TODO Configutre your own contract for each network
-import { zkSynkContractConfig, lineaContractConfig, ethereumContractConfig } from "./contracts";
-import { BaseError } from "viem";
-import { stringify } from "../utils/stringify";
-const Editor = () => {
-    const [totalAmount, setTotalAmount] = useState<number>(0);
-    const { chain } = useNetwork()
+const Editor = (props:any) => {
     const [editorMiror, setEditorMiror] = useState<string>("");
     const [arrayOfAddressesFromEditor, setArrayOfAddressesFromEditor] = useState<any>();
-    const [validArray, setValidArray] = useState<any>([]);
     const [isValid, setIsValid] = useState<boolean>(true);
     const regxAmount = /^(?!0\d+)\d+(\.\d+)?$/;
     const validate = useCallback(() => {
@@ -43,14 +35,13 @@ const Editor = () => {
                 if(newElement.errorAddress === "" || newElement.errorAmount === ""){
                     newArray.push(newElement);
                 }
-                
             });
             if(newArray.length > 0) {
                 const calculateTotal = newArray.reduce((acum: number, element: any) => acum + parseFloat(element.amount), 0);
                 console.log(calculateTotal);
-                setTotalAmount(calculateTotal);
+                props.setTotalAmount(calculateTotal);
             }
-            setValidArray(newArray);
+            props.setValidArray(newArray);
             setEditorMiror(arrayOfAddressesFromEditor);
         }
         // // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -58,9 +49,9 @@ const Editor = () => {
     const deleteInvalid = () => {
         let newElems = "";
         const valArr: any = [];
-        validArray.forEach((element: any, index: number) => {
+        props.validArray.forEach((element: any, index: number) => {
             if (element.errorAddress === "" && element.errorAmount === "") {
-                if (index === validArray.length - 1) {
+                if (index === props.validArray.length - 1) {
                     newElems += element.address + "," + element.amount;
                 }
                 else {
@@ -69,26 +60,11 @@ const Editor = () => {
                 valArr.push(element);
             }
         });
-        setValidArray(valArr);
+        props.setValidArray(valArr);
         setEditorMiror(newElems);
         setArrayOfAddressesFromEditor(newElems);
         //  eslint-disable-next-line react-hooks/exhaustive-deps
     }
-    const [currentContract, setCurrentContract] = useState<any>()
-    useEffect(() => {
-        //TODO change to your own contract with network name or chainId
-        setCurrentContract(chain?.name === "ethereum" ? ethereumContractConfig : chain?.name === "zkSynk" ? zkSynkContractConfig : lineaContractConfig)
-    }, [chain])
-    const { write, data, error, isLoading, isError } = useContractWrite({
-        ...currentContract,
-        //TODO change to Send
-        functionName: 'Send',
-    })
-    const {
-        data: receipt,
-        isLoading: isPending,
-        isSuccess,
-    } = useWaitForTransaction({ hash: data?.hash })
     useEffect(() => {
         validate();
         // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -113,28 +89,9 @@ const Editor = () => {
                     })
                 }
             </div>
-            <button onClick={() => {
-                write({
-                    args: [
-                        validArray.map((element: any) => element.address),
-                        //TODO change to if ETH parseEthers else parseUnits and add token decimals
-                        validArray.map((element: any) => ethers.parseUnits(element.amount))
-                    ],
-                    value: ethers.parseEther(totalAmount.toString()),
-                })
-            }}>Send Tx</button>
+          
 
-            {isLoading && <div>Check wallet...</div>}
-            {isPending && <div>Transaction pending...</div>}
-            {isSuccess && (
-                <>
-                    <div>Transaction Hash: {data?.hash}</div>
-                    <div>
-                        Transaction Receipt: <pre>{stringify(receipt, null, 2)}</pre>
-                    </div>
-                </>
-            )}
-            {isError && <div>{(error as BaseError)?.shortMessage}</div>}
+        
         </div>
     )
 }

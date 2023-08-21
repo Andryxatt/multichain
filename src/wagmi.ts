@@ -1,6 +1,6 @@
 import { w3mConnectors, w3mProvider } from '@web3modal/ethereum'
 import { configureChains, createConfig } from 'wagmi'
-import { mainnet, zkSync, lineaTestnet, Chain } from 'wagmi/chains'
+import { mainnet, zkSync, lineaTestnet, Chain, goerli } from 'wagmi/chains'
 export const walletConnectProjectId = '37d4531c02159e2d08fc933bcf6e813b'
 const lineaMainnet: Chain = {
   id: 59144,
@@ -36,7 +36,7 @@ const lineaMainnet: Chain = {
 }
 
 const { chains, publicClient, webSocketPublicClient } = configureChains(
-  [mainnet, lineaMainnet, ...(import.meta.env?.MODE === 'development' ? [zkSync] : [])],
+  [mainnet, goerli, lineaMainnet, ...(import.meta.env?.MODE === 'development' ? [zkSync] : [])],
   [w3mProvider({ projectId: walletConnectProjectId })],
 )
 

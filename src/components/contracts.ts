@@ -204,7 +204,7 @@ export const wagmiContractConfig = {
 } as const
 
 export const usdcContractConfig = {
-  address: '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48',
+  address: '0x326C977E6efc84E512bB9C30f76E30c160eD06FB',
   abi: erc20ABI,
 } as const
 export const zkSynkContractConfig = {
